@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
@@ -21,55 +22,75 @@ type task struct {
 var db *sql.DB
 
 func initDB() {
+	dsn := "root:Emotib@t15.@tcp(mariadb:3306)/API_REST"
 	var err error
-
-	connString := "sqlserver://chipi:0104@localhost:1434?database=APIact"
-
-	// Abrir la conexión
-	db, err = sql.Open("sqlserver", connString)
+	db, err = sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatal("Error creando la conexión: ", err)
+		log.Fatal("Error al abrir la base de datos:", err)
 	}
 
-	// Verificar que la conexión sea válida
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("Error conectando a la base de datos: ", err)
+	// Verifica si la conexión es exitosa
+	if err := db.Ping(); err != nil {
+		log.Fatal("Error al conectar a la base de datos:", err)
 	}
-
-	fmt.Println("Conexión exitosa a la base de datos SQL Server")
 }
 
-type allTasks []task
-
-var tasks = allTasks{
-	{
-		ID:      1,
-		Name:    "Task One",
-		Content: "Some Content",
-	},
-}
+var tasks []task
 
 func getTasks(w http.ResponseWriter, r *http.Request) {
+	//w.Header().Set("Content-Type", "application/json")
+	//json.NewEncoder(w).Encode(tasks)
+
+	if db == nil {
+		http.Error(w, "Database connection is not initialized", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
+	tasks := []task{}
+
+	rows, err := db.Query("SELECT id_act, nombre, contenido FROM actividades")
+	if err != nil {
+		log.Println("Error querying database:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var t task
+		if err := rows.Scan(&t.ID, &t.Name, &t.Content); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tasks = append(tasks, t)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(tasks)
+
 }
 
 func deleteTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	taskID, err := strconv.Atoi(vars["id"])
-
 	if err != nil {
-		fmt.Fprintf(w, "Invalid ID")
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
 
-	for i, t := range tasks {
-		if t.ID == taskID {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-			fmt.Fprintf(w, "The task with ID %v has been remove succesfully", taskID)
-		}
+	// Elimina la tarea de la base de datos
+	_, err = db.Exec("DELETE FROM actividades WHERE id_act = ?", taskID)
+	if err != nil {
+		http.Error(w, "Error deleting task", http.StatusInternalServerError)
+		return
 	}
+
+	w.WriteHeader(http.StatusNoContent) // No content
 
 }
 
@@ -77,13 +98,28 @@ func createTasks(w http.ResponseWriter, r *http.Request) {
 	var newTask task
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Fprintf(w, "Insert a valid Task")
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
 
-	json.Unmarshal(reqBody, &newTask)
+	if err := json.Unmarshal(reqBody, &newTask); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
 
-	newTask.ID = len(tasks) + 1
-	tasks = append(tasks, newTask)
+	// Inserta en la base de datos
+	result, err := db.Exec("INSERT INTO actividades (nombre, contenido) VALUES (?, ?)", newTask.Name, newTask.Content)
+	if err != nil {
+		http.Error(w, "Error creating task", http.StatusInternalServerError)
+		return
+	}
+
+	lastID, err := result.LastInsertId() // Obtener el ID del nuevo registro
+	if err != nil {
+		http.Error(w, "Error retrieving last insert ID", http.StatusInternalServerError)
+		return
+	}
+	newTask.ID = int(lastID) // Conversión de int64 a int
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -93,50 +129,55 @@ func createTasks(w http.ResponseWriter, r *http.Request) {
 func getTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	taskID, err := strconv.Atoi(vars["id"])
-
 	if err != nil {
-		fmt.Fprintf(w, "Invalid ID")
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
 	}
 
-	for _, task := range tasks {
-		if task.ID == taskID {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(task)
-		}
+	var t task
+	err = db.QueryRow("SELECT id_act, nombre, contenido FROM actividades WHERE id_act = ?", taskID).Scan(&t.ID, &t.Name, &t.Content)
+	if err == sql.ErrNoRows {
+		http.Error(w, "Task not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "Error retrieving task", http.StatusInternalServerError)
+		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(t)
 }
 
 func updateTask(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	taskID, err := strconv.Atoi(vars["id"])
-	var updatedTask task
-
 	if err != nil {
-		fmt.Fprintf(w, "Invalid ID")
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
 	}
 
+	var updatedTask task
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Fprintf(w, "Please Enter Valid Data")
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
 
-	json.Unmarshal(reqBody, &updatedTask)
-
-	for i, t := range tasks {
-		if t.ID == taskID {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-			updatedTask.ID = taskID
-			tasks = append(tasks, updatedTask)
-
-			// Configurar el encabezado para indicar que la respuesta es JSON
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-
-			// Devolver la tarea actualizada como JSON
-			json.NewEncoder(w).Encode(updatedTask)
-			return
-		}
+	if err := json.Unmarshal(reqBody, &updatedTask); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
 	}
+
+	// Actualiza la tarea en la base de datos
+	_, err = db.Exec("UPDATE actividades SET nombre = ?, contenido = ? WHERE id_act = ?", updatedTask.Name, updatedTask.Content, taskID)
+	if err != nil {
+		http.Error(w, "Error updating task", http.StatusInternalServerError)
+		return
+	}
+
+	updatedTask.ID = taskID
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedTask)
 }
 
 func indexRoute(w http.ResponseWriter, r *http.Request) {
@@ -144,6 +185,8 @@ func indexRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	initDB()
+	defer db.Close()
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", indexRoute)
 	router.HandleFunc("/tasks", getTasks).Methods("GET")

@@ -6,8 +6,8 @@ url = 'http://localhost:3000/newtask'
 
 # Datos que quieres enviar
 data = {
-    'Name': "Task Tree",
-    'Content': 'Content Tree'
+    'Name': "Actividad Tres",
+    'Content': "Escribir articulos de alta calidad"
 }
 
 # Realizar la solicitud POST con el formato JSON

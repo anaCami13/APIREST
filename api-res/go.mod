@@ -1,8 +1,11 @@
 module API-RES
 
-go 1.23.1
+go 1.23
+
+require github.com/go-sql-driver/mysql v1.8.1
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/githubnemo/CompileDaemon v1.4.0 // indirect
