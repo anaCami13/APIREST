@@ -14,9 +14,9 @@ import (
 )
 
 type task struct {
-	ID      int    `json:ID`
-	Name    string `json:Name`
-	Content string `json:Content`
+	ID      int    `json:"ID"`
+	Name    string `json:"Name"`
+	Content string `json:"Content"`
 }
 
 var db *sql.DB
@@ -184,15 +184,27 @@ func indexRoute(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome to my Api Chest")
 }
 
+func enableCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if r.Method == "OPTIONS" {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	initDB()
 	defer db.Close()
 	router := mux.NewRouter().StrictSlash(true)
 	router.HandleFunc("/", indexRoute)
 	router.HandleFunc("/tasks", getTasks).Methods("GET")
-	router.HandleFunc("/newtask", createTasks).Methods("POST")
+	router.HandleFunc("/tasks", createTasks).Methods("POST")
 	router.HandleFunc("/tasks/{id}", getTask).Methods("GET")
 	router.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
 	router.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
-	log.Fatal(http.ListenAndServe(":3000", router))
+	log.Fatal(http.ListenAndServe(":3000", enableCORS(router)))
 }

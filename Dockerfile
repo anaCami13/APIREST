@@ -10,14 +10,19 @@ RUN go mod download
 
 COPY api-res/. .
 
-# Copia el script wait-for-it.sh al contenedor y otorga permisos de ejecución
-COPY wait-for-it.sh ./
+# Copia el script wait-for-it.sh al contenedor y colócalo en /usr/local/bin
+COPY wait-for-it.sh /usr/local/bin/wait-for-it.sh
 
+# Otorga permisos de ejecución al script
+RUN chmod +x /usr/local/bin/wait-for-it.sh
+
+# Construye la aplicación y la coloca en /usr/local/bin
 RUN go build -v -o /usr/local/bin/app .
 
 EXPOSE 3000
 
-# Usa wait-for-it.sh para esperar a que MariaDB esté listo antes de iniciar la aplicación
-CMD ["wait-for-it.sh", "mariadb:3306", "--", "/usr/local/bin/app"]
+# Usa la ruta completa para ejecutar wait-for-it.sh
+CMD ["/usr/local/bin/wait-for-it.sh", "mariadb:3306", "--", "/usr/local/bin/app"]
+
 
 

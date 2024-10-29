@@ -7,22 +7,34 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-    ports:   # Agrega esto para exponer el puerto
-      - "3307:3306"
+    ports:
+      - "3307:3306"  # Exponer el puerto 3306 en el puerto 3307 de la máquina anfitriona
 
   api_res:
     build: .
     image: apirest:v1.0  # Especifica el nombre y la etiqueta de la imagen
     depends_on:
       - mariadb
-    command: ["./wait-for-it.sh", "mariadb:3306", "--", "/usr/local/bin/app"]
+    command: ["/usr/local/bin/wait-for-it.sh", "mariadb:3306", "--", "/usr/local/bin/app"]
     environment:
       DATABASE_URL: "root:Emotib@t15.@tcp(mariadb:3306)/API_REST"
     ports:
-      - "3000:3000"  # Exponer el puerto 3000
+      - "3000:3000"  # Exponer el puerto 3000 en el puerto 5000 de la máquina anfitriona
+  
+  apache:
+    build: 
+      context: .
+      dockerfile: Dockerfile.apache
+    ports:
+      - "8081:80"
+    volumes:
+      - ./app:/usr/local/apache2/htdocs/
+    depends_on:
+      - api_res
 
 volumes:
   db_data:
+
 
 
 
