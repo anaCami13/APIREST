@@ -206,5 +206,5 @@ func main() {
 	router.HandleFunc("/tasks/{id}", getTask).Methods("GET")
 	router.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
 	router.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
-	log.Fatal(http.ListenAndServe(":3000", enableCORS(router)))
+	log.Fatal(http.ListenAndServe("0.0.0.0:3000", enableCORS(router)))
 }
