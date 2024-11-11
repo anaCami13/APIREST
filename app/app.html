@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Actividades</title>
+    <style>
+        /* Fondo degradado moradito y azul :) */
+        body {
+            font-family: 'Segoe UI';
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #3e1f92, #8231b2, #104080);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Título: Gestión de Actividades */
+        h1 {
+            text-align: center;
+            color: #ffffff;
+            margin: 30px 0 20px;
+            font-size: 2em;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Contenedor principal */
+        .contenedor-principal {
+            display: flex;
+            width: 85%;
+            max-width: 1200px;
+            gap: 30px;
+            padding: 20px;
+        }
+
+        /* Para los contenedores semitrasparetes */
+        .contenedor {
+            flex: 1;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+            color: #fff;
+            transition: transform 0.3s ease;
+        }
+
+        /* Cosito para animar al pasar el mouse */
+        .contenedor:hover {
+            transform: scale(1.02); 
+        }
+
+        /* Titulos de contenedrs izquierod y drecho */
+        h2 {
+            font-weight: 600;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Inputs y Btones */
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            outline: none;
+            box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px 0;
+            background-color: #0a58a0;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #6a0dad;
+            transform: translateY(-2px); 
+        }
+
+        /* Contenedor Derecho pa la Lista de Actividades */
+        #lista-actividades {
+            background-color: rgba(8, 4, 63, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            color: #333;
+            overflow-y: auto;
+            max-height: 300px;
+            box-shadow: inset 0px 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Contenedor donde muestra la busqyedas */
+        #resultados-busqueda {
+            margin-top: 10px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            color: #333;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
+            display: none;
+            text-align: left;
+        }
+
+        /* Botones denrtro dle contenedor donde hace la busqueda */
+        #resultados-busqueda button {
+            width: 45%;
+            margin: 10px 5px;
+        }
+
+        .contenedor input,
+        .contenedor button {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Diseño de la tabla donde se muestra la lista de las actividaded  */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: rgba(255, 255, 255, 0.2); 
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid black; 
+            color: #ffffff; 
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.3); 
+            color: #333333; 
+        }
+
+        /* Para los botones modificar y eliminae */
+        .botones-modificar {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gestión de Actividades</h1>
+
+    <div class="contenedor-principal">
+
+        <!------------------------------------------------------ Contenedor Izquierdo ----------------------------------------------------------->
+        <div class="contenedor">
+            <h2>Agregar Nueva Actividad</h2>
+            <input type="text" id="nombre" placeholder="Nombre" required>
+            <input type="text" id="descripcion" placeholder="Descripción" required>
+            <button onclick="agregarActividad()">Agregar</button>
+
+            <h2>Buscar Actividad</h2>
+            <input type="text" id="buscar-id" placeholder="Ponga el ID de la actividad">
+            <button onclick="buscarActividad()">Buscar</button>
+            
+            <!------------------------------------------------ Resultado de la busqueda -------------------------------------------------------->
+            <div id="resultados-busqueda">
+                <p><strong>Resultado:</strong></p>
+                <p id="resultado-nombre">Nombre: -</p>
+                <p id="resultado-descripcion">Descripción: -</p>
+                <div class="botones-modificar">
+                    <button onclick="modificarActividad()">Modificar</button>
+                    <button onclick="eliminarActividad()">Eliminar</button>
+                </div>
+                <button onclick="guardarCambios()">Guardar Cambios</button>
+            </div>
+        </div>
+
+        <!------------------------------------------------------ Contenedor Derecho ----------------------------------------------------------->
+        <div class="contenedor">
+            <h2>Lista de las Actividades</h2>
+            <div id="lista-actividades">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="actividad-lista">
+                        <!-- Las actividades apareceran aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
