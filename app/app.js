@@ -1,7 +1,7 @@
  // Función para cargar las actividades y mostrarlas en la lista
 async function cargarActividades() {
     try {
-        const response = await fetch("http://localhost:3000/tasks", {
+        const response = await fetch("http://172.21.0.2/:32000/tasks", {
             method: "GET"
         });
         
@@ -38,7 +38,7 @@ async function agregarActividad() {
     const descripcion = document.getElementById("descripcion").value;
 
     try {
-        const response = await fetch("http://localhost:3000/tasks", {
+        const response = await fetch("http://172.21.0.2:32000/tasks", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ Name: nombre, Content: descripcion })
@@ -60,7 +60,7 @@ async function agregarActividad() {
 async function buscarActividad() {
     const id = document.getElementById("buscar-id").value;
     try {
-        const response = await fetch(`http://localhost:3000/tasks/${id}`);
+        const response = await fetch(`http://172.21.0.2:32000/tasks/${id}`);
         if (!response.ok) throw new Error("Actividad no encontrada.");
 
         const actividad = await response.json();
@@ -83,7 +83,7 @@ async function modificarActividad() {
     const descripcion = document.getElementById("resultado-descripcion").innerText.replace("Descripción: ", "");
 
     try {
-        const response = await fetch(`http://localhost:3000/tasks/${id}`, {
+        const response = await fetch(`http://172.21.0.2:32000/tasks/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ Name: nombre, Content: descripcion })
@@ -106,7 +106,7 @@ async function modificarActividad() {
 async function eliminarActividad() {
     const id = document.getElementById("resultados-busqueda").getAttribute("data-id");
     try {
-        const response = await fetch(`http://localhost:3000/tasks/${id}`, { method: "DELETE" });
+        const response = await fetch(`http://172.21.0.2:32000/tasks/${id}`, { method: "DELETE" });
         if (response.ok) {
             alert("Actividad eliminada correctamente.");
             cargarActividades();

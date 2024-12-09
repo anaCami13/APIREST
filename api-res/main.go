@@ -22,7 +22,7 @@ type task struct {
 var db *sql.DB
 
 func initDB() {
-	dsn := "root:Emotib@t15.@tcp(mariadb:3306)/API_REST"
+	dsn := "root:Emotib@t15.@tcp(mariadb-service:3306)/API_REST"
 	var err error
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
