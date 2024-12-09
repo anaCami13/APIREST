@@ -19,12 +19,13 @@ services:
     environment:
       DATABASE_URL: "root:Emotib@t15.@tcp(mariadb:3306)/API_REST"
     ports:
-      - "3000:3000"  # Exponer el puerto 3000 en el puerto 5000 de la máquina anfitriona
+      - "3000:3000"  
   
   apache:
     build: 
       context: .
       dockerfile: Dockerfile.apache
+    image: apache-frontend:v1.0  
     ports:
       - "8081:80"
     volumes:

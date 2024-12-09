@@ -1,0 +1,11 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraMounts:
+      - containerPath: /usr/local/apache2/htdocs
+        hostPath: /home/vorago/Escritorio/APIREST/app
+        readOnly: false
+      - containerPath: /docker-entrypoint-initdb.d
+        hostPath: /home/vorago/Escritorio/APIREST/docker-entrypoint-initdb.d
+        readOnly: false
